@@ -62,7 +62,7 @@ func (m *Model) submit() tea.Cmd {
 	}
 }
 
-func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+func (m Model) UpdateTextPrompt(msg tea.Msg) (Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
@@ -103,6 +103,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	m.previous = m.textInput.Value()
 
 	return m, cmd
+}
+
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	return m.UpdateTextPrompt(msg)
 }
 
 var (

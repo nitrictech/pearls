@@ -36,7 +36,7 @@ func (m Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+func (m Model) UpdateListPrompt(msg tea.Msg) (Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
@@ -47,9 +47,13 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		}
 	}
 
-	m.listInput, cmd = m.listInput.Update(msg)
+	m.listInput, cmd = m.listInput.UpdateInlineList(msg)
 
 	return m, cmd
+}
+
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	return m.UpdateListPrompt(msg)
 }
 
 func (m Model) IsComplete() bool {
@@ -106,7 +110,7 @@ func New(args Args) Model {
 		args.MaxDisplayedItems = 5
 	}
 
-	listInput := inlinelist.New(inlinelist.ModelArgs{
+	listInput := inlinelist.New(inlinelist.Args{
 		Items:             args.Items,
 		MaxDisplayedItems: args.MaxDisplayedItems,
 	})

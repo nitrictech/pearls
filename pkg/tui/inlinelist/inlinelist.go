@@ -35,12 +35,12 @@ type Model struct {
 	choice             string
 }
 
-type ModelArgs struct {
+type Args struct {
 	Items             []string
 	MaxDisplayedItems int
 }
 
-func New(args ModelArgs) Model {
+func New(args Args) Model {
 	return Model{
 		cursor:             0,
 		firstDisplayedItem: 0,
@@ -62,27 +62,41 @@ func (m Model) Init() tea.Cmd {
 }
 
 var (
-	textGrayStyle = lipgloss.NewStyle().Foreground(tui.Colors.Gray)
-	selectedStyle = lipgloss.NewStyle().Bold(true).Foreground(tui.Colors.White)
+	cursorIconOffset   = lipgloss.NewStyle().MarginLeft(2)
+	selected           = lipgloss.NewStyle().Bold(true).Foreground(tui.Colors.White)
+	unselected         = cursorIconOffset.Copy().Foreground(tui.Colors.Gray)
+	moreIndicatorStyle = cursorIconOffset.Copy().Italic(true).Foreground(tui.Colors.Gray)
 )
 
 func (m Model) View() string {
-	listView := view.New().WithStyle(textGrayStyle)
+	listView := view.New()
 
 	for i := 0; i < min(m.MaxDisplayedItems, len(m.Items)); i++ {
 		listView.AddRow(
 			view.WhenOr(
 				i+m.firstDisplayedItem == m.cursor,
-				view.NewFragment(fmt.Sprintf("→ %s", m.Items[i+m.firstDisplayedItem])).WithStyle(selectedStyle),
-				view.NewFragment(fmt.Sprintf("  %s", m.Items[i+m.firstDisplayedItem])),
+				view.NewFragment(fmt.Sprintf("→ %s", m.Items[i+m.firstDisplayedItem])).WithStyle(selected),
+				view.NewFragment(fmt.Sprintf("%s", m.Items[i+m.firstDisplayedItem])).WithStyle(unselected),
 			),
+		)
+	}
+
+	if m.MaxDisplayedItems < len(m.Items) {
+		listView.AddRow(
+			view.NewFragment("...").WithStyle(moreIndicatorStyle),
 		)
 	}
 
 	return listView.Render()
 }
 
-func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+type TypeThingy interface {
+}
+
+// UpdateInlineList does the same thing as Update, without erasing the component's type.
+//
+// useful when composing this model into another model
+func (m Model) UpdateInlineList(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
@@ -98,6 +112,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	}
 
 	return m, nil
+}
+
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	return m.UpdateInlineList(msg)
 }
 
 func (m Model) CursorUp() Model {

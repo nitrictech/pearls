@@ -66,10 +66,12 @@ func (m Model) Init() tea.Cmd {
 }
 
 var (
-	cursorIconOffset   = lipgloss.NewStyle().MarginLeft(2)
-	selected           = lipgloss.NewStyle().Bold(true).Foreground(tui.Colors.White)
-	unselected         = cursorIconOffset.Copy().Foreground(tui.Colors.Gray)
-	moreIndicatorStyle = cursorIconOffset.Copy().Italic(true).Foreground(tui.Colors.Gray)
+	cursorIconOffset         = lipgloss.NewStyle().MarginLeft(2)
+	selected                 = lipgloss.NewStyle().Bold(true).Foreground(tui.Colors.Blue)
+	unselected               = cursorIconOffset.Copy().Foreground(tui.Colors.White)
+	descriptionStyle         = cursorIconOffset.Copy().Foreground(tui.Colors.Gray)
+	descriptionSelectedStyle = cursorIconOffset.Copy().Foreground(tui.Colors.Blue)
+	moreIndicatorStyle       = cursorIconOffset.Copy().Italic(true).Foreground(tui.Colors.Gray)
 )
 
 func (m Model) View() string {

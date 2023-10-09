@@ -27,16 +27,20 @@ import (
 	"github.com/nitrictech/pearls/pkg/tui/view"
 )
 
+type ListItem interface {
+	GetItemValue() string
+	GetItemDescription() string
+}
 type Model struct {
 	cursor             int
-	Items              []string
+	Items              []ListItem
 	MaxDisplayedItems  int
 	firstDisplayedItem int
 	choice             string
 }
 
 type Args struct {
-	Items             []string
+	Items             []ListItem
 	MaxDisplayedItems int
 }
 
@@ -62,10 +66,12 @@ func (m Model) Init() tea.Cmd {
 }
 
 var (
-	cursorIconOffset   = lipgloss.NewStyle().MarginLeft(2)
-	selected           = lipgloss.NewStyle().Bold(true).Foreground(tui.Colors.White)
-	unselected         = cursorIconOffset.Copy().Foreground(tui.Colors.Gray)
-	moreIndicatorStyle = cursorIconOffset.Copy().Italic(true).Foreground(tui.Colors.Gray)
+	cursorIconOffset         = lipgloss.NewStyle().MarginLeft(2)
+	selected                 = lipgloss.NewStyle().Bold(true).Foreground(tui.Colors.Blue)
+	unselected               = cursorIconOffset.Copy().Foreground(tui.Colors.White)
+	descriptionStyle         = cursorIconOffset.Copy().Foreground(tui.Colors.Gray)
+	descriptionSelectedStyle = cursorIconOffset.Copy().Foreground(tui.Colors.Blue)
+	moreIndicatorStyle       = cursorIconOffset.Copy().Italic(true).Foreground(tui.Colors.Gray)
 )
 
 func (m Model) View() string {
@@ -75,10 +81,19 @@ func (m Model) View() string {
 		listView.AddRow(
 			view.WhenOr(
 				i+m.firstDisplayedItem == m.cursor,
-				view.NewFragment(fmt.Sprintf("→ %s", m.Items[i+m.firstDisplayedItem])).WithStyle(selected),
-				view.NewFragment(fmt.Sprintf("%s", m.Items[i+m.firstDisplayedItem])).WithStyle(unselected),
+				view.NewFragment(fmt.Sprintf("→ %s", m.Items[i+m.firstDisplayedItem].GetItemValue())).WithStyle(selected),
+				view.NewFragment(m.Items[i+m.firstDisplayedItem].GetItemValue()).WithStyle(unselected),
 			),
 		)
+
+		if m.Items[i+m.firstDisplayedItem].GetItemDescription() != "" {
+			listView.AddRow(view.WhenOr(
+				i+m.firstDisplayedItem == m.cursor,
+				view.NewFragment(m.Items[i+m.firstDisplayedItem].GetItemDescription()).WithStyle(descriptionSelectedStyle),
+				view.NewFragment(m.Items[i+m.firstDisplayedItem].GetItemDescription()).WithStyle(descriptionStyle),
+			),
+				view.Break())
+		}
 	}
 
 	if m.MaxDisplayedItems < len(m.Items) {
@@ -90,8 +105,7 @@ func (m Model) View() string {
 	return listView.Render()
 }
 
-type TypeThingy interface {
-}
+type UpdateListItemsMsg []ListItem
 
 // UpdateInlineList does the same thing as Update, without erasing the component's type.
 //
@@ -103,7 +117,7 @@ func (m Model) UpdateInlineList(msg tea.Msg) (Model, tea.Cmd) {
 		case key.Matches(msg, tui.KeyMap.Quit):
 			return m, tea.Quit
 		case key.Matches(msg, tui.KeyMap.Enter):
-			m.choice = m.Items[m.cursor]
+			m.choice = m.Items[m.cursor].GetItemValue()
 		case key.Matches(msg, tui.KeyMap.Down):
 			return m.CursorDown(), nil
 		case key.Matches(msg, tui.KeyMap.Up):
@@ -116,6 +130,14 @@ func (m Model) UpdateInlineList(msg tea.Msg) (Model, tea.Cmd) {
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m.UpdateInlineList(msg)
+}
+
+func (m Model) UpdateItems(items []ListItem) Model {
+	m.Items = items
+	m.cursor = 0
+	m.firstDisplayedItem = 0
+
+	return m
 }
 
 func (m Model) CursorUp() Model {

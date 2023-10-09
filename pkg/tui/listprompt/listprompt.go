@@ -36,6 +36,12 @@ func (m Model) Init() tea.Cmd {
 	return nil
 }
 
+func (m Model) UpdateItems(items []inlinelist.ListItem) Model {
+	m.listInput = m.listInput.UpdateItems(items)
+
+	return m
+}
+
 func (m Model) UpdateListPrompt(msg tea.Msg) (Model, tea.Cmd) {
 	var cmd tea.Cmd
 
@@ -100,7 +106,7 @@ func (m Model) View() string {
 
 type Args struct {
 	MaxDisplayedItems int
-	Items             []string
+	Items             []inlinelist.ListItem
 	Prompt            string
 	Tag               string
 }
@@ -120,4 +126,24 @@ func New(args Args) Model {
 		listInput: listInput,
 		Tag:       args.Tag,
 	}
+}
+
+type StringItem struct {
+	Value string
+}
+
+func (s StringItem) GetItemValue() string {
+	return s.Value
+}
+
+func (s StringItem) GetItemDescription() string {
+	return ""
+}
+
+func ConvertStringsToListItems(strings []string) []inlinelist.ListItem {
+	items := make([]inlinelist.ListItem, len(strings))
+	for i, str := range strings {
+		items[i] = StringItem{Value: str}
+	}
+	return items
 }

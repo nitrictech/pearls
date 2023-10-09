@@ -85,6 +85,15 @@ func (m Model) View() string {
 				view.NewFragment(m.Items[i+m.firstDisplayedItem].GetItemValue()).WithStyle(unselected),
 			),
 		)
+
+		if m.Items[i+m.firstDisplayedItem].GetItemDescription() != "" {
+			listView.AddRow(view.WhenOr(
+				i+m.firstDisplayedItem == m.cursor,
+				view.NewFragment(m.Items[i+m.firstDisplayedItem].GetItemDescription()).WithStyle(descriptionSelectedStyle),
+				view.NewFragment(m.Items[i+m.firstDisplayedItem].GetItemDescription()).WithStyle(descriptionStyle),
+			),
+				view.Break())
+		}
 	}
 
 	if m.MaxDisplayedItems < len(m.Items) {

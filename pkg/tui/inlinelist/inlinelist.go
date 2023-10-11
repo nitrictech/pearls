@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/paginator"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
@@ -37,6 +38,7 @@ type Model struct {
 	MaxDisplayedItems  int
 	firstDisplayedItem int
 	choice             string
+	Paginator          paginator.Model
 }
 
 type Args struct {
@@ -45,9 +47,15 @@ type Args struct {
 }
 
 func New(args Args) Model {
+	p := paginator.New()
+	p.Type = paginator.Dots
+	p.ActiveDot = activePaginationDot.String()
+	p.InactiveDot = inactivePaginationDot.String()
+
 	return Model{
 		cursor:             0,
 		firstDisplayedItem: 0,
+		Paginator:          p,
 		Items:              args.Items,
 		MaxDisplayedItems:  args.MaxDisplayedItems,
 	}
@@ -61,23 +69,33 @@ func min(a, b int) int {
 	return b
 }
 
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
 func (m Model) Init() tea.Cmd {
 	return nil
 }
 
 var (
+	bullet                   = "•"
 	cursorIconOffset         = lipgloss.NewStyle().MarginLeft(2)
 	selected                 = lipgloss.NewStyle().Bold(true).Foreground(tui.Colors.Blue)
 	unselected               = cursorIconOffset.Copy().Foreground(tui.Colors.White)
 	descriptionStyle         = cursorIconOffset.Copy().Foreground(tui.Colors.Gray)
 	descriptionSelectedStyle = cursorIconOffset.Copy().Foreground(tui.Colors.Blue)
-	moreIndicatorStyle       = cursorIconOffset.Copy().Italic(true).Foreground(tui.Colors.Gray)
+	inactivePaginationDot    = cursorIconOffset.Copy().Foreground(tui.Colors.Gray).SetString(bullet)
+	activePaginationDot      = cursorIconOffset.Copy().Foreground(tui.Colors.White).SetString(bullet)
 )
 
 func (m Model) View() string {
 	listView := view.New()
+	maxDisplayedItems := min(m.MaxDisplayedItems, len(m.Items))
 
-	for i := 0; i < min(m.MaxDisplayedItems, len(m.Items)); i++ {
+	for i := 0; i < maxDisplayedItems; i++ {
 		listView.AddRow(
 			view.WhenOr(
 				i+m.firstDisplayedItem == m.cursor,
@@ -96,10 +114,11 @@ func (m Model) View() string {
 		}
 	}
 
-	if m.MaxDisplayedItems < len(m.Items) {
-		listView.AddRow(
-			view.NewFragment("...").WithStyle(moreIndicatorStyle),
-		)
+	if maxDisplayedItems < len(m.Items) {
+		m.Paginator.TotalPages = (len(m.Items) + maxDisplayedItems - 1) / maxDisplayedItems
+		m.Paginator.Page = max(0, m.cursor/maxDisplayedItems)
+
+		listView.AddRow(view.NewFragment(m.Paginator.View()))
 	}
 
 	return listView.Render()
